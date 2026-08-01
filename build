@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+skip_tests=false
+extra_maven_args=()
+
+usage() {
+  cat <<'USAGE'
+Usage: ./build [--skip-tests] [--] [extra Maven args...]
+
+Build and smoke-test the native jname executable with GraalVM Native Image.
+
+Options:
+  --skip-tests  Pass -DskipTests to Maven.
+  -h, --help    Show this help.
+USAGE
+}
+
+die() {
+  printf 'Error: %s\n' "$*" >&2
+  exit 1
+}
+
+while (($#)); do
+  case "$1" in
+    --skip-tests)
+      skip_tests=true
+      shift
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      extra_maven_args+=("$@")
+      break
+      ;;
+    *)
+      extra_maven_args+=("$1")
+      shift
+      ;;
+  esac
+done
+
+command -v mvn >/dev/null 2>&1 || die "mvn is required but was not found on PATH."
+
+candidate_homes=()
+[[ -n "${GRAALVM_HOME:-}" ]] && candidate_homes+=("$GRAALVM_HOME")
+[[ -n "${JAVA_HOME:-}" ]] && candidate_homes+=("$JAVA_HOME")
+candidate_homes+=("/Library/Java/JavaVirtualMachines/graalvm-25.jdk/Contents/Home")
+
+if ! command -v native-image >/dev/null 2>&1; then
+  for candidate_home in "${candidate_homes[@]}"; do
+    if [[ -x "$candidate_home/bin/native-image" ]]; then
+      export GRAALVM_HOME="$candidate_home"
+      export JAVA_HOME="$candidate_home"
+      export PATH="$candidate_home/bin:$PATH"
+      break
+    fi
+  done
+fi
+
+command -v native-image >/dev/null 2>&1 || die \
+  "native-image is required; activate a GraalVM 25 JDK with Native Image."
+
+cd "$script_dir"
+maven_args=(-Pnative clean package)
+[[ "$skip_tests" == true ]] && maven_args=(-Pnative -DskipTests clean package)
+maven_args+=("${extra_maven_args[@]}")
+
+printf 'Using native-image: %s\n' "$(command -v native-image)"
+mvn "${maven_args[@]}"
+
+executable="target/jname"
+[[ "${OS:-}" == "Windows_NT" ]] && executable="target/jname.exe"
+[[ -x "$executable" || -f "$executable" ]] || die "Expected executable was not built: $executable"
+
+"$executable" --help >/dev/null
+generated_name="$("$executable" --words 3)"
+[[ "$generated_name" == *-*-* ]] || die "Native executable smoke test returned: $generated_name"
+
+printf 'Built and smoke-tested: %s\n' "$executable"

@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+source_repository="blater/jname"
+tap_repository="blater/homebrew-tap"
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+dist_dir="$script_dir/dist"
+formula_path="$dist_dir/Formula/jname.rb"
+local_mode=false
+
+usage() {
+  cat <<'USAGE'
+Usage: ./util/build_brew [local]
+
+Create and publish the Homebrew formula for the current Jname version.
+With "local", create a formula for target/jname without publishing it.
+USAGE
+}
+
+log() {
+  printf '==> %s\n' "$*"
+}
+
+die() {
+  printf 'Error: %s\n' "$*" >&2
+  exit 1
+}
+
+case "${1:-}" in
+  "") ;;
+  local) local_mode=true ;;
+  -h|--help)
+    usage
+    exit 0
+    ;;
+  *)
+    usage >&2
+    exit 2
+    ;;
+esac
+[[ "$#" -le 1 ]] || die "Too many arguments."
+
+cd "$script_dir"
+version="${JNAME_RELEASE_VERSION:-}"
+if [[ -z "$version" ]]; then
+  version="$(awk -F '[<>]' '/^[[:space:]]*<version>/ { print $3; exit }' pom.xml)"
+fi
+[[ -n "$version" ]] || die "Could not read the project version from pom.xml."
+mkdir -p "$(dirname "$formula_path")"
+
+write_formula() {
+  local url="$1"
+  local checksum="$2"
+  local download_options="${3:-}"
+  local extra_install="${4:-}"
+
+  cat > "$formula_path" <<FORMULA
+class Jname < Formula
+  desc "Generate human-readable random names"
+  homepage "https://github.com/$source_repository"
+  url "$url"$download_options
+  version "$version"
+  sha256 "$checksum"
+  license "Apache-2.0"
+
+  depends_on arch: :arm64
+  depends_on macos: :sequoia
+
+  def install
+    bin.install "jname"$extra_install
+  end
+
+  test do
+    output = shell_output("#{bin}/jname --words 3")
+    assert_match(/\\A[a-z]+(?:-[a-z]+){2}\\n\\z/, output)
+  end
+end
+FORMULA
+}
+
+if [[ "$local_mode" == true ]]; then
+  binary_path="$script_dir/target/jname"
+  [[ -x "$binary_path" ]] || die "Build target/jname first; it does not exist."
+  checksum="$(shasum -a 256 "$binary_path" | awk '{ print $1 }')"
+  binary_url="file://${binary_path// /%20}"
+  write_formula "$binary_url" "$checksum" ", using: :nounzip"
+  log "Local Homebrew formula created"
+  printf 'Formula: %s\n' "$formula_path"
+  exit 0
+fi
+
+archive_name="jname-${version}-darwin-arm64.tar.gz"
+archive_path="$dist_dir/$archive_name"
+[[ -f "$archive_path" ]] || die "Release artifact does not exist: $archive_path"
+
+checksum="$(shasum -a 256 "$archive_path" | awk '{ print $1 }')"
+release_url="https://github.com/$source_repository/releases/download/v$version/$archive_name"
+write_formula "$release_url" "$checksum" "" $'\n    pkgshare.install "LICENSE", "NOTICE"'
+
+log "Checking Homebrew formula style"
+brew style "$formula_path"
+
+temporary_dir="$(mktemp -d "${TMPDIR:-/tmp}/jname-brew.XXXXXX")"
+cleanup() {
+  rm -rf "$temporary_dir"
+}
+trap cleanup EXIT
+
+tap_worktree="$temporary_dir/homebrew-tap"
+log "Updating $tap_repository"
+gh repo clone "$tap_repository" "$tap_worktree"
+mkdir -p "$tap_worktree/Formula"
+cp "$formula_path" "$tap_worktree/Formula/jname.rb"
+git -C "$tap_worktree" add Formula/jname.rb
+
+if git -C "$tap_worktree" diff --cached --quiet; then
+  log "Tap formula is already current"
+else
+  github_login="$(gh api user --jq .login)"
+  git -C "$tap_worktree" \
+    -c user.name="${GIT_AUTHOR_NAME:-$github_login}" \
+    -c user.email="${GIT_AUTHOR_EMAIL:-$github_login@users.noreply.github.com}" \
+    commit -m "jname $version"
+  git -C "$tap_worktree" push origin HEAD
+fi
+
+log "Homebrew distribution published"
+printf 'Install: brew install blater/tap/jname\n'

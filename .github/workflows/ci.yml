@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Verify JVM build and fat JAR
+        run: mvn --batch-mode --no-transfer-progress verify
+
+      - name: Smoke-test fat JAR
+        shell: bash
+        run: |
+          set -euo pipefail
+          jar="$(find target -maxdepth 1 -name 'jname-*-all.jar' -print -quit)"
+          test -n "$jar"
+          java -jar "$jar" --help >/dev/null
+          test "$(java -jar "$jar" --words 3 | awk -F- '{ print NF }')" = 3
+
+  native:
+    needs: test
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v6
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          distribution: graalvm
+          version: "25.0"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          cache: maven
+
+      - name: Build native executable
+        run: mvn --batch-mode --no-transfer-progress -Pnative -DskipTests package
+
+      - name: Smoke-test native executable
+        shell: bash
+        run: |
+          set -euo pipefail
+          target/jname --help >/dev/null
+          test "$(target/jname --words 3 | awk -F- '{ print NF }')" = 3
