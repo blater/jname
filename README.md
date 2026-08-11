@@ -3,12 +3,56 @@
 [![CI](https://github.com/blater/jname/actions/workflows/ci.yml/badge.svg)](https://github.com/blater/jname/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/blater/jname)](https://github.com/blater/jname/releases/latest)
 
-Jname is a small Java 25 implementation based on
-[Dustin Kirkland's petname](https://github.com/dustinkirkland/petname). It generates human-readable
-random names from adverbs, adjectives, and animal names and can be used as either a library or an
-executable JAR.
+Jname is a small Java 25 implementation of [Dustin Kirkland's petname](https://github.com/dustinkirkland/petname). 
+It generates human-readable random names from adverbs, adjectives, and animal names 
+and can be used as a library, executable jar, or run from the command line.
 
-## Java API
+## Examples
+
+```bash
+$ jname
+plausible-dace
+
+$ jname -s "_"
+foxy_squirrel
+
+$ jname --ubuntu
+vehement-vulture
+
+$ jname --adjective
+rapid
+```
+
+## Install with Brew
+
+Install the native macOS ARM64 executable with Homebrew:
+
+```shell
+brew install blater/tap/jname
+```
+
+
+## Command line usage
+
+```bash
+Usage: jname [-w|--words INT] [-l|--letters INT]
+               [-s|--separator STR] [-d|--dir STR]
+               [-c|--complexity INT] [-u|--ubuntu]
+
+  -w, --words INT       number of words; default: 2
+  -l, --letters INT     maximum letters in each word; default: unlimited
+  -s, --separator STR   separator between words; default: -
+  -d, --dir DIR         custom word-list directory
+  -c, --complexity INT  0=small, 1=medium, 2=large
+  -u, --ubuntu          generate an alliterative name
+      --adverb          generate one adverb
+      --adjective       generate one adjective
+      --name            generate one animal name
+  -h, --help            show this help
+```
+
+
+## Usage as a Java API
 
 ```java
 import blater.jname.Jname;
@@ -36,14 +80,7 @@ String name = Jname.generate(JnameOptions.builder()
 `JnameGenerator` accepts a `RandomGenerator` when deterministic or application-controlled
 randomness is required. Its no-argument constructor uses `SecureRandom`.
 
-## Command line
-
-Install the native macOS ARM64 executable with Homebrew:
-
-```shell
-brew install blater/tap/jname
-```
-
+## Run the executable fat jar
 Native executables for macOS ARM64, Linux x64, and Windows x64, plus a platform-independent fat
 JAR, are published on the [GitHub releases page](https://github.com/blater/jname/releases).
 
