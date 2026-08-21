@@ -155,6 +155,6 @@ This project is based on the design and shell implementation of
 large dictionaries are copied from upstream petname 2.11 commit
 [`70ed924cb96c290ac051b8ae797417c4adbbb5c9`](https://github.com/dustinkirkland/petname/commit/70ed924cb96c290ac051b8ae797417c4adbbb5c9).
 
-Both upstream petname and Jname are licensed under the
-[Apache License, Version 2.0](LICENSE). Attribution and dictionary provenance are recorded in
-[NOTICE](NOTICE) and in the bundled word-list metadata.
+Jname is licensed under the [MIT License](LICENSE). The copied upstream dictionaries remain
+licensed under the Apache License, Version 2.0. Attribution and dictionary provenance are
+recorded in [NOTICE](NOTICE) and in the bundled word-list metadata.
