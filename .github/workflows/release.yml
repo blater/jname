@@ -123,6 +123,15 @@ jobs:
           executable="${{ matrix.executable }}"
           "$executable" --help >/dev/null
           test "$("$executable" --words 3 | awk -F- '{ print NF }')" = 3
+          for strategy in tolkien hex base32 ulid; do
+            generated="$("$executable" --strategy "$strategy")"
+            test -n "$generated"
+            case "$strategy" in
+              hex) [[ "$generated" =~ ^[0-9a-f]{4}$ ]] ;;
+              base32) [[ "$generated" =~ ^[0-9abcdefghjkmnpqrstvwxyz]{4}$ ]] ;;
+              ulid) [[ "$generated" =~ ^[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}$ ]] ;;
+            esac
+          done
 
       - name: Smoke-test Windows executable
         if: runner.os == 'Windows'
@@ -135,6 +144,21 @@ jobs:
           if (($generated -split '-').Count -ne 3) {
             throw "Unexpected generated name: $generated"
           }
+          foreach ($strategy in @("tolkien", "hex", "base32", "ulid")) {
+            $token = & $executable --strategy $strategy
+            if ([string]::IsNullOrWhiteSpace($token)) {
+              throw "Empty output for strategy $strategy"
+            }
+            $pattern = switch ($strategy) {
+              "hex" { "^[0-9a-f]{4}$" }
+              "base32" { "^[0-9abcdefghjkmnpqrstvwxyz]{4}$" }
+              "ulid" { "^[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}$" }
+              default { $null }
+            }
+            if ($pattern -and $token -notmatch $pattern) {
+              throw "Unexpected output for strategy $strategy`: $token"
+            }
+          }
 
       - name: Package Unix executable
         if: matrix.archive == 'tar'
@@ -146,7 +170,8 @@ jobs:
           set -euo pipefail
           mkdir -p dist/package
           cp target/jname LICENSE NOTICE dist/package/
-          tar -C dist/package -czf "dist/jname-${VERSION}-${PLATFORM}.tar.gz" jname LICENSE NOTICE
+          cp -R LICENSES dist/package/
+          tar -C dist/package -czf "dist/jname-${VERSION}-${PLATFORM}.tar.gz" jname LICENSE NOTICE LICENSES
 
       - name: Package Windows executable
         if: matrix.archive == 'zip'
@@ -158,8 +183,9 @@ jobs:
           $ErrorActionPreference = "Stop"
           New-Item -ItemType Directory -Force -Path dist\package | Out-Null
           Copy-Item target\jname.exe, LICENSE, NOTICE -Destination dist\package
+          Copy-Item LICENSES -Destination dist\package -Recurse
           Compress-Archive `
-            -Path dist\package\jname.exe, dist\package\LICENSE, dist\package\NOTICE `
+            -Path dist\package\* `
             -DestinationPath "dist\jname-$env:VERSION-$env:PLATFORM.zip"
 
       - name: Upload packaged executable
@@ -198,8 +224,19 @@ jobs:
           test -f "$jar"
           java -jar "$jar" --help >/dev/null
           test "$(java -jar "$jar" --words 3 | awk -F- '{ print NF }')" = 3
+          for strategy in tolkien hex base32 ulid; do
+            generated="$(java -jar "$jar" --strategy "$strategy")"
+            test -n "$generated"
+            case "$strategy" in
+              hex) [[ "$generated" =~ ^[0-9a-f]{4}$ ]] ;;
+              base32) [[ "$generated" =~ ^[0-9abcdefghjkmnpqrstvwxyz]{4}$ ]] ;;
+              ulid) [[ "$generated" =~ ^[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}$ ]] ;;
+            esac
+          done
           jar --list --file "$jar" | grep -Fx META-INF/LICENSE
           jar --list --file "$jar" | grep -Fx META-INF/NOTICE
+          jar --list --file "$jar" | grep -Fx META-INF/LICENSES/Apache-2.0.txt
+          jar --list --file "$jar" | grep -Fx META-INF/LICENSES/CC-BY-SA-4.0.txt
           mkdir -p dist
           cp "$jar" dist/
 

@@ -1,0 +1,15 @@
+Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+
+The Tolkien name-list compilation bundled at
+src/main/resources/blater/jname/words/tolkien/names.txt is attributed to
+Tolkien Gateway. It is copied without modification from goname v0.3.0,
+commit 25c4d921b86e10123d1e45b6d69da267cfb47256. Its source indexes and
+attribution are listed in the pinned goname source file:
+https://github.com/blater/goname/blob/25c4d921b86e10123d1e45b6d69da267cfb47256/words/tolkien/README.md
+
+The compilation is licensed under the Creative Commons Attribution-ShareAlike
+4.0 International Public License. The complete license text and terms are at:
+https://creativecommons.org/licenses/by-sa/4.0/legalcode
+
+License deed:
+https://creativecommons.org/licenses/by-sa/4.0/

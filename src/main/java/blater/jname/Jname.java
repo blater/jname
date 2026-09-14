@@ -18,6 +18,9 @@ public class Jname {
     }
 
     public String generate(int words, @NonNull String separator) {
+        if (words < 1) {
+            throw new IllegalArgumentException("words must be a positive integer");
+        }
         return GENERATOR.generate(JnameOptions.builder()
                 .words(words)
                 .separator(separator)

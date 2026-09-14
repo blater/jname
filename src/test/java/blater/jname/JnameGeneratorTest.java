@@ -79,10 +79,13 @@ class JnameGeneratorTest {
     @Test
     void rejectsImpossibleConfigurations() throws IOException {
         writeWords(words, "swiftly", "calm", "otter");
-        var noWords = options(0, "-");
+        var automaticWords = options(0, "-");
+        var negativeWords = options(-1, "-");
         var tooShort = options(2, "-").toBuilder().maxLetters(2).build();
 
-        assertThrows(IllegalArgumentException.class, () -> Jname.generate(noWords));
+        assertEquals(2, JnameGenerator.seeded(1).generate(automaticWords).split("-").length);
+        assertThrows(IllegalArgumentException.class, () -> Jname.generate(negativeWords));
+        assertThrows(IllegalArgumentException.class, () -> Jname.generate(0));
         assertThrows(JnameException.class, () -> Jname.generate(tooShort));
     }
 

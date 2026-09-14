@@ -1,12 +1,33 @@
 jname
 Copyright 2026 jname contributors
 
-This project is a Java implementation based on Dustin Kirkland's petname
-codebase and includes its dictionaries:
+The jname Java software is licensed under the MIT License in LICENSE. That
+software license is separate from licenses applying to bundled dictionary
+data.
+
+The bundled dictionaries under src/main/resources/blater/jname/words/ are
+byte-for-byte copies from goname v0.3.0 at commit
+25c4d921b86e10123d1e45b6d69da267cfb47256:
+https://github.com/blater/goname/tree/v0.3.0
+
+The small, medium, and large dictionaries originate from Dustin Kirkland's
+petname 2.11 at commit 70ed924cb96c290ac051b8ae797417c4adbbb5c9:
 https://github.com/dustinkirkland/petname
+Upstream petname is Copyright 2014 Dustin Kirkland. These dictionaries are
+licensed under the Apache License, Version 2.0; its text is in
+LICENSES/Apache-2.0.txt in source/distribution archives and
+META-INF/LICENSES/Apache-2.0.txt in the JAR.
 
-Upstream petname is Copyright 2014 Dustin Kirkland and licensed under the
-Apache License, Version 2.0.
+The Tolkien name-list compilation in words/tolkien/names.txt is attributed to
+Tolkien Gateway and licensed under the Creative Commons Attribution-ShareAlike
+4.0 International Public License (CC BY-SA 4.0):
+https://creativecommons.org/licenses/by-sa/4.0/
+Its source indexes and attribution are described in
+the pinned goname source file:
+https://github.com/blater/goname/blob/25c4d921b86e10123d1e45b6d69da267cfb47256/words/tolkien/README.md
+A copy is bundled at `blater/jname/words/tolkien/README.md` inside the JAR.
+The accompanying license notice is in LICENSES/CC-BY-SA-4.0.txt in
+source/distribution archives and META-INF/LICENSES/CC-BY-SA-4.0.txt in the JAR.
 
-The bundled dictionaries are copied from upstream petname 2.11 at commit
-70ed924cb96c290ac051b8ae797417c4adbbb5c9.
+Dictionary provenance and SHA-256 hashes for every bundled text file are
+recorded in src/main/resources/blater/jname/words/UPSTREAM.md.

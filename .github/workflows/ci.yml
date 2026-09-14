@@ -36,6 +36,15 @@ jobs:
           test -n "$jar"
           java -jar "$jar" --help >/dev/null
           test "$(java -jar "$jar" --words 3 | awk -F- '{ print NF }')" = 3
+          for strategy in tolkien hex base32 ulid; do
+            generated="$(java -jar "$jar" --strategy "$strategy")"
+            test -n "$generated"
+            case "$strategy" in
+              hex) [[ "$generated" =~ ^[0-9a-f]{4}$ ]] ;;
+              base32) [[ "$generated" =~ ^[0-9abcdefghjkmnpqrstvwxyz]{4}$ ]] ;;
+              ulid) [[ "$generated" =~ ^[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}$ ]] ;;
+            esac
+          done
 
   native:
     needs: test
@@ -61,3 +70,12 @@ jobs:
           set -euo pipefail
           target/jname --help >/dev/null
           test "$(target/jname --words 3 | awk -F- '{ print NF }')" = 3
+          for strategy in tolkien hex base32 ulid; do
+            generated="$(target/jname --strategy "$strategy")"
+            test -n "$generated"
+            case "$strategy" in
+              hex) [[ "$generated" =~ ^[0-9a-f]{4}$ ]] ;;
+              base32) [[ "$generated" =~ ^[0-9abcdefghjkmnpqrstvwxyz]{4}$ ]] ;;
+              ulid) [[ "$generated" =~ ^[0-7][0-9abcdefghjkmnpqrstvwxyz]{25}$ ]] ;;
+            esac
+          done

@@ -61,7 +61,7 @@ class Jname < Formula
   url "$url"$download_options
   version "$version"
   sha256 "$checksum"
-  license "Apache-2.0"
+  license all_of: ["MIT", "Apache-2.0", "CC-BY-SA-4.0"]
 
   depends_on arch: :arm64
   depends_on macos: :sequoia
@@ -95,7 +95,7 @@ archive_path="$dist_dir/$archive_name"
 
 checksum="$(shasum -a 256 "$archive_path" | awk '{ print $1 }')"
 release_url="https://github.com/$source_repository/releases/download/v$version/$archive_name"
-write_formula "$release_url" "$checksum" "" $'\n    pkgshare.install "LICENSE", "NOTICE"'
+write_formula "$release_url" "$checksum" "" $'\n    pkgshare.install "LICENSE", "NOTICE", "LICENSES"'
 
 log "Checking Homebrew formula style"
 brew style "$formula_path"
